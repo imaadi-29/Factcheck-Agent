@@ -16,8 +16,8 @@ A web app that acts as a **truth layer for marketing content**. Upload a PDF and
 ```
 PDF ─► PyMuPDF (text + page numbers)
     ─► Gemini: extract checkable claims + search queries        (1 AI call)
-    ─► Tavily: live web search per claim, run in parallel       (1–2 searches per claim)
-    ─► Gemini: judge claims in batches of 5 using ONLY the evidence
+    ─► Tavily: 1–2 live web searches per claim, all run at once
+    ─► Gemini: judge claims in parallel batches of 4, using ONLY the evidence
     ─► Streamlit report: verdicts, corrected facts, sources, CSV/JSON download
 ```
 

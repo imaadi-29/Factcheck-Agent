@@ -24,11 +24,30 @@ def _version_key(name: str):
     return numbers or [0.0]
 
 
+_MODEL_LIST_CACHE: dict = {}   # remembered between runs so we only ask Google once
+
+
 class GeminiLLM:
     def __init__(self, api_key: str, model: str = ""):
         self.client = genai.Client(api_key=api_key)
-        self.models = [model] if model else self._discover_models()
+        if model:
+            self.models = [model]
+        else:
+            key = hash(api_key)
+            if key not in _MODEL_LIST_CACHE:
+                _MODEL_LIST_CACHE[key] = self._discover_models()
+            self.models = _MODEL_LIST_CACHE[key]
         self.active_model = self.models[0]
+        self.thinking_supported = True
+
+    def _config(self, thinking: str | None):
+        """Lower 'thinking' = faster answers. Models that don't support the setting get none."""
+        if thinking and self.thinking_supported:
+            return types.GenerateContentConfig(
+                response_mime_type="application/json",
+                thinking_config=types.ThinkingConfig(thinking_level=thinking),
+            )
+        return types.GenerateContentConfig(response_mime_type="application/json")
 
     def _discover_models(self) -> list[str]:
         try:
@@ -45,8 +64,11 @@ class GeminiLLM:
         # "gemini-flash-latest" is Google's alias for the current Flash model.
         return names[:3] + ["gemini-flash-latest"] if names else ["gemini-flash-latest"]
 
-    def generate_json(self, prompt: str) -> dict:
-        """Send a prompt and return the parsed JSON reply, with retries and model fallback."""
+    def generate_json(self, prompt: str, thinking: str | None = None) -> dict:
+        """Send a prompt and return the parsed JSON reply, with retries and model fallback.
+
+        thinking: "low" or "medium" asks the model to reason less, which is much faster.
+        """
         last_error = None
         for model in list(self.models):
             for attempt in range(3):
@@ -54,7 +76,7 @@ class GeminiLLM:
                     response = self.client.models.generate_content(
                         model=model,
                         contents=prompt,
-                        config=types.GenerateContentConfig(response_mime_type="application/json"),
+                        config=self._config(thinking),
                     )
                     self.active_model = model
                     return _parse_json(response.text or "")
@@ -63,6 +85,9 @@ class GeminiLLM:
                 except Exception as exc:
                     last_error = exc
                     message = str(exc).lower()
+                    if "thinking" in message and self.thinking_supported:
+                        self.thinking_supported = False   # model rejects the setting: retry without it
+                        continue
                     if "not found" in message or "404" in message or "limit: 0" in message:
                         break                 # this model is unavailable: try the next one
                     if "429" in message or "resource_exhausted" in message or "503" in message \

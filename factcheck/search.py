@@ -33,11 +33,12 @@ class SearchClient:
         )
         return response.get("results", [])
 
-    def evidence_for(self, queries: list[str]) -> list[dict]:
-        """Run up to two queries for one claim and return de-duplicated evidence."""
+    @staticmethod
+    def _merge(result_lists: list[list[dict]]) -> list[dict]:
+        """Combine the results of a claim's queries, dropping duplicates and excluded sites."""
         evidence, seen_urls = [], set()
-        for query in queries[:2]:
-            for item in self._search_one(query):
+        for results in result_lists:
+            for item in results:
                 url = item.get("url")
                 if not url or url in seen_urls or _is_excluded(url):
                     continue
@@ -51,17 +52,31 @@ class SearchClient:
         evidence.sort(key=lambda e: len(e["content"]), reverse=True)
         return evidence[:MAX_EVIDENCE_PER_CLAIM]
 
-    def evidence_for_all(self, claims: list[dict], workers: int = 4) -> list[dict]:
-        """Search for every claim in parallel. Errors are recorded per claim."""
+    def evidence_for_all(self, claims: list[dict], workers: int = 8) -> list[dict]:
+        """Run every query of every claim at the same time. Errors are recorded per claim."""
+        jobs = [(i, q) for i, claim in enumerate(claims) for q in claim["search_queries"][:2]]
 
-        def run(claim):
+        def run(job):
             try:
-                return {"evidence": self.evidence_for(claim["search_queries"]), "error": ""}
+                return job[0], self._search_one(job[1]), ""
             except Exception as exc:  # network problem, quota used up, ...
-                return {"evidence": [], "error": str(exc)[:300]}
+                return job[0], None, str(exc)[:300]
 
+        per_claim = [{"results": [], "errors": []} for _ in claims]
         with ThreadPoolExecutor(max_workers=workers) as pool:
-            return list(pool.map(run, claims))
+            for i, results, error in pool.map(run, jobs):
+                if error:
+                    per_claim[i]["errors"].append(error)
+                else:
+                    per_claim[i]["results"].append(results)
+
+        out = []
+        for found in per_claim:
+            if found["results"]:          # at least one query worked
+                out.append({"evidence": self._merge(found["results"]), "error": ""})
+            else:
+                out.append({"evidence": [], "error": (found["errors"] or ["No search was run."])[0]})
+        return out
 
 
 def _is_excluded(url: str) -> bool:

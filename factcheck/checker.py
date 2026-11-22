@@ -1,11 +1,13 @@
 """Steps 2 + 4 - EXTRACT claims and JUDGE them. This file ties the whole pipeline together."""
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date
 
 from .prompts import EXTRACT_PROMPT, JUDGE_PROMPT
 
 VERDICTS = ("Verified", "Inaccurate", "False")
-JUDGE_BATCH_SIZE = 5     # claims judged per AI call (fewer calls = fewer rate-limit problems)
+JUDGE_BATCH_SIZE = 4     # claims judged per AI call
+JUDGE_WORKERS = 3        # batches judged at the same time (kept low for free-tier rate limits)
 MAX_DOCUMENT_CHARS = 90_000
 
 
@@ -22,7 +24,7 @@ def extract_claims(llm, pages: list[dict], max_claims: int) -> list[dict]:
         document += block
 
     data = llm.generate_json(EXTRACT_PROMPT.format(
-        today=today(), max_claims=max_claims, document=document))
+        today=today(), max_claims=max_claims, document=document), thinking="low")
 
     valid_pages = {p["page"] for p in pages}
     claims = []
@@ -66,17 +68,21 @@ def judge_claims(llm, claims: list[dict], search_results: list[dict], on_progres
         items.append({**claim, "evidence": found["evidence"], "search_error": found["error"]})
 
     to_judge = [i for i in items if not i["search_error"]]
-    missing = []
-    for start in range(0, len(to_judge), JUDGE_BATCH_SIZE):
-        batch = to_judge[start:start + JUDGE_BATCH_SIZE]
-        results = _judge_batch(llm, batch)
-        for item in batch:
-            if item["id"] in results:
-                _apply_verdict(item, results[item["id"]])
-            else:
-                missing.append(item)
-        if on_progress:
-            on_progress(min(start + JUDGE_BATCH_SIZE, len(to_judge)), len(to_judge))
+    batches = [to_judge[k:k + JUDGE_BATCH_SIZE] for k in range(0, len(to_judge), JUDGE_BATCH_SIZE)]
+    missing, done = [], 0
+    # Judge all batches at the same time; progress is reported from this (main) thread.
+    with ThreadPoolExecutor(max_workers=JUDGE_WORKERS) as pool:
+        futures = {pool.submit(_judge_batch, llm, batch): batch for batch in batches}
+        for future in as_completed(futures):
+            batch, results = futures[future], future.result()
+            for item in batch:
+                if item["id"] in results:
+                    _apply_verdict(item, results[item["id"]])
+                else:
+                    missing.append(item)
+            done += len(batch)
+            if on_progress:
+                on_progress(done, len(to_judge))
 
     # The model sometimes skips a claim in a batch: ask again, one claim per call.
     for item in missing:
@@ -91,7 +97,8 @@ def judge_claims(llm, claims: list[dict], search_results: list[dict], on_progres
 
 
 def _judge_batch(llm, batch: list[dict]) -> dict:
-    data = llm.generate_json(JUDGE_PROMPT.format(today=today(), claims_block=_claims_block(batch)))
+    data = llm.generate_json(JUDGE_PROMPT.format(today=today(), claims_block=_claims_block(batch)),
+                             thinking="medium")
     results = {}
     for r in data.get("results", []):
         try:

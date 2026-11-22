@@ -15,7 +15,7 @@ PDF = Path(__file__).parent / "pdfs" / "4_trap_mixed.pdf"
 class StubLLM:
     active_model = "stub"
 
-    def generate_json(self, prompt):
+    def generate_json(self, prompt, thinking=None):
         if "Extract up to" in prompt:
             return {"claims": [
                 {"claim": "Eiffel Tower completed in 1925", "original_text": "completed in 1925",
@@ -69,7 +69,7 @@ def test_skipped_claim_is_retried():
     class SkippingLLM:
         calls = 0
 
-        def generate_json(self, prompt):
+        def generate_json(self, prompt, thinking=None):
             SkippingLLM.calls += 1
             if "### CLAIM id=1" in prompt:   # batch call: answer claim 1, skip claim 2
                 return {"results": [{"id": 1, "verdict": "Verified", "source_ids": [1]}]}
@@ -80,3 +80,42 @@ def test_skipped_claim_is_retried():
     out = judge_claims(SkippingLLM(), claims, found)
     assert [r["verdict"] for r in out] == ["Verified", "False"]
     assert SkippingLLM.calls == 2
+
+
+def test_parallel_search_keeps_partial_results():
+    """One failed query should not throw away the other query's evidence."""
+    from factcheck.search import SearchClient
+
+    sc = SearchClient.__new__(SearchClient)
+
+    def fake_search(query):
+        if query.startswith("bad"):
+            raise RuntimeError("quota exceeded")
+        return [{"url": f"https://{query}.example", "title": query, "content": "text"},
+                {"url": "https://www.instagram.com/p/1", "title": "ig", "content": "x"}]
+
+    sc._search_one = fake_search
+    claims = [{"search_queries": ["bad-a", "good-a"]}, {"search_queries": ["bad-b"]}]
+    out = sc.evidence_for_all(claims)
+    assert [e["url"] for e in out[0]["evidence"]] == ["https://good-a.example"]  # Instagram dropped
+    assert out[0]["error"] == ""
+    assert out[1]["evidence"] == [] and "quota" in out[1]["error"]
+
+
+def test_thinking_setting_falls_back_when_unsupported():
+    from types import SimpleNamespace
+    from factcheck.llm import GeminiLLM
+
+    configs = []
+
+    def generate_content(model, contents, config):
+        configs.append(config.thinking_config)
+        if config.thinking_config is not None:
+            raise RuntimeError("400 INVALID_ARGUMENT: thinking_level is not supported for this model")
+        return SimpleNamespace(text='{"ok": true}')
+
+    llm = GeminiLLM.__new__(GeminiLLM)
+    llm.client = SimpleNamespace(models=SimpleNamespace(generate_content=generate_content))
+    llm.models, llm.active_model, llm.thinking_supported = ["m"], "m", True
+    assert llm.generate_json("hi", thinking="low") == {"ok": True}
+    assert configs[0] is not None and configs[1] is None
