@@ -80,8 +80,12 @@ def report_cache() -> dict:
     return {}
 
 
+# Bump this whenever the checking logic changes, so saved reports from older code are not reused.
+PIPELINE_VERSION = "2026-11-22.2"
+
+
 def check_document(pdf_bytes: bytes, max_claims: int, say) -> dict:
-    cache_key = (hashlib.sha256(pdf_bytes).hexdigest(), max_claims)
+    cache_key = (PIPELINE_VERSION, hashlib.sha256(pdf_bytes).hexdigest(), max_claims)
     cache = report_cache()
     if cache_key in cache:
         say("This document was checked recently, so the saved report is shown.")
