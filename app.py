@@ -81,7 +81,7 @@ def report_cache() -> dict:
 
 
 # Bump this whenever the checking logic changes, so saved reports from older code are not reused.
-PIPELINE_VERSION = "2026-11-22.2"
+PIPELINE_VERSION = "2026-11-22.3"
 
 
 def check_document(pdf_bytes: bytes, max_claims: int, say) -> dict:

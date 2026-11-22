@@ -60,3 +60,23 @@ def test_bad_pdf():
     from factcheck.pdf_utils import PDFError
     with pytest.raises(PDFError):
         extract_pages(b"not a pdf")
+
+
+def test_skipped_claim_is_retried():
+    """If the model leaves a claim out of a batch, it is asked again on its own."""
+    from factcheck.checker import judge_claims
+
+    class SkippingLLM:
+        calls = 0
+
+        def generate_json(self, prompt):
+            SkippingLLM.calls += 1
+            if "### CLAIM id=1" in prompt:   # batch call: answer claim 1, skip claim 2
+                return {"results": [{"id": 1, "verdict": "Verified", "source_ids": [1]}]}
+            return {"results": [{"id": 2, "verdict": "False", "source_ids": []}]}
+
+    claims = [{"id": 1, "claim": "a", "search_queries": ["a"]}, {"id": 2, "claim": "b", "search_queries": ["b"]}]
+    found = [{"evidence": [{"title": "T", "url": "https://t.example", "content": "x"}], "error": ""}] * 2
+    out = judge_claims(SkippingLLM(), claims, found)
+    assert [r["verdict"] for r in out] == ["Verified", "False"]
+    assert SkippingLLM.calls == 2

@@ -39,10 +39,16 @@ Verdicts (use exactly one):
 - "Verified": credible evidence clearly supports the claim (small rounding differences of about 5% are fine).
   If the claim explicitly dates a figure (e.g. "in 2019") and it was correct for that date, it is Verified;
   mention any newer figure in the explanation.
-- "Inaccurate": the subject is real but a number, date or detail is wrong, OR the figure is outdated
-  (it was true in the past but is presented as current and newer data exists).
-- "False": there is no credible evidence for the claim, the event/entity/statistic appears fabricated,
-  or the evidence flatly contradicts it.
+- "Inaccurate": the subject (person, company, place, event, product, statistic) is real, but a number,
+  date, name or detail is wrong, OR the claim is outdated (it was true in the past but is presented as
+  current, and newer data exists).
+  Examples: a real landmark with the wrong completion year; a real company's old user count stated as
+  current; a former record holder described as the current one.
+- "False": the claim is fabricated or has no credible basis at all: an invented company, study, survey,
+  quote, event or statistic, or a statement that was never true.
+  Examples: a study that cannot be found anywhere; a company or growth figure with no trace in any source.
+- Decide between Inaccurate and False by asking: is the core subject real, and was the claim ever true
+  or close to true? If yes, use Inaccurate, even when the error is large. If no, use False.
 
 Rules:
 - Prefer authoritative sources (official sites, government/statistical bodies, company filings,
@@ -50,6 +56,7 @@ Rules:
 - "correct_fact": for Inaccurate or False claims, state the correct real fact with its date/timeframe,
   taken from the evidence. If the evidence does not contain the correct value, write
   "No reliable figure found in search results." For Verified claims, return "".
+- Return exactly one result for EVERY claim id listed below. Never skip a claim.
 - "explanation": 1-3 plain-English sentences explaining the verdict.
 - "source_ids": the evidence numbers that support your verdict/correction (empty list if none).
 - "confidence": "High", "Medium" or "Low".

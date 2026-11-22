@@ -16,7 +16,7 @@ MAX_CHARS_PER_RESULT = 1200
 EXCLUDED_DOMAINS = [
     "instagram.com", "facebook.com", "x.com", "twitter.com", "tiktok.com", "pinterest.com",
     "linkedin.com", "threads.net", "brainly.com", "quora.com", "chegg.com", "scribd.com",
-    "coursehero.com", "studocu.com", "search.yahoo.com", "bing.com", "google.com",
+    "coursehero.com", "studocu.com", "search.yahoo.com", "bing.com", "google.com", "youtube.com",
 ]
 
 

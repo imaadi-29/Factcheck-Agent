@@ -66,25 +66,39 @@ def judge_claims(llm, claims: list[dict], search_results: list[dict], on_progres
         items.append({**claim, "evidence": found["evidence"], "search_error": found["error"]})
 
     to_judge = [i for i in items if not i["search_error"]]
+    missing = []
     for start in range(0, len(to_judge), JUDGE_BATCH_SIZE):
         batch = to_judge[start:start + JUDGE_BATCH_SIZE]
-        data = llm.generate_json(JUDGE_PROMPT.format(today=today(), claims_block=_claims_block(batch)))
-        by_id = {}
-        for r in data.get("results", []):
-            try:
-                by_id[int(r.get("id"))] = r
-            except (TypeError, ValueError):
-                continue
+        results = _judge_batch(llm, batch)
         for item in batch:
-            _apply_verdict(item, by_id.get(item["id"]))
+            if item["id"] in results:
+                _apply_verdict(item, results[item["id"]])
+            else:
+                missing.append(item)
         if on_progress:
             on_progress(min(start + JUDGE_BATCH_SIZE, len(to_judge)), len(to_judge))
+
+    # The model sometimes skips a claim in a batch: ask again, one claim per call.
+    for item in missing:
+        results = _judge_batch(llm, [item])
+        _apply_verdict(item, results.get(item["id"]))
 
     for item in items:
         if item["search_error"]:
             item.update(verdict="Not checked", confidence="", correct_fact="", sources=[],
                         explanation=f"The web search failed for this claim: {item['search_error']}")
     return items
+
+
+def _judge_batch(llm, batch: list[dict]) -> dict:
+    data = llm.generate_json(JUDGE_PROMPT.format(today=today(), claims_block=_claims_block(batch)))
+    results = {}
+    for r in data.get("results", []):
+        try:
+            results[int(r.get("id"))] = r
+        except (TypeError, ValueError):
+            continue
+    return results
 
 
 def _apply_verdict(item: dict, result: dict | None) -> None:
