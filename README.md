@@ -6,7 +6,7 @@ A web app that acts as a **truth layer for marketing content**. Upload a PDF and
 2. **Verifies** each claim by searching the **live web** (Tavily Search API)
 3. **Reports** each claim as **Verified**, **Inaccurate** (wrong or outdated) or **False** (no evidence / fabricated), with an explanation, the **correct real fact** and **source links**
 
-**Live app:** `<add your Streamlit URL here>`
+**Live app:** https://factcheck-agent-web.streamlit.app/
 **Demo video:** `<add link here>`
 
 ---
