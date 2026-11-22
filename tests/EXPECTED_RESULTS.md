@@ -16,8 +16,10 @@ expected is shown; a flagged claim with the other label is a "label mismatch", n
 | 3_fabricated_claims.pdf | 6 | 6 of 6 flagged | The Zentrava sentence was split into two claims |
 | 4_trap_mixed.pdf (run 1) | 9 | 8 of 8 planted claims, exact labels | |
 | 4_trap_mixed.pdf (run 2, after source filter) | 9 | 7 of 8 | Python claim "Not checked" (model skipped it); Eiffel 1925 labelled False |
+| **2_outdated_stats.pdf (rerun after fixes)** | 6 | **6 of 6, exact labels** | Taipei 101 now Inaccurate |
+| **4_trap_mixed.pdf (run 3, after fixes)** | 9 | **8 of 8, exact labels** | Python Verified; Eiffel 1925 Inaccurate; extra claim Verified |
 
-**Fixes made after these runs:**
+**Fixes made after runs 1–2 (and confirmed by the reruns above):**
 - A claim the model skips in a batch is now re-checked on its own, with a test.
 - The judging rules now say exactly when to use Inaccurate (a real subject with a wrong or outdated
   detail) and when to use False (fabricated, never true).
@@ -38,7 +40,7 @@ expected is shown; a flagged claim with the other label is a "label mismatch", n
 |---|---|---|---|
 | World population 7 billion | Inaccurate | Inaccurate ✅ | ~8.26–8.3 billion (2026) |
 | ChatGPT 100M weekly users | Inaccurate | Inaccurate ✅ | 900M+ weekly users (TechCrunch, Feb 2026) |
-| Tallest building is Taipei 101 | Inaccurate | False ⚠️ label mismatch | Burj Khalifa, 828 m |
+| Tallest building is Taipei 101 | Inaccurate | False ⚠️ → Inaccurate ✅ on rerun | Burj Khalifa, 828 m |
 | India 1.21B, second most populous | Inaccurate | Inaccurate ✅ | Most populous, 1.47B+ (2026) |
 | Netflix 200M subscribers | Inaccurate | Inaccurate ✅ | 325M+ paid subscribers (end of 2025) |
 | Marathon record 2:03:59 (Gebrselassie) | Inaccurate | Inaccurate ✅ | 1:59:30, Sabastian Sawe, London, 26 Apr 2026 |
@@ -57,16 +59,16 @@ world record (26 Apr 2026), and Netflix's Q4 2025 shareholder letter reported 32
 | Water boils at 150 °C at sea level | Inaccurate/False | Inaccurate ✅ | 100 °C |
 
 ## 4_trap_mixed.pdf (closest to the company's "Trap Document")
-| Claim | Page | Expected | Run 1 | Run 2 |
-|---|---|---|---|---|
-| Apple founded 1976 | 1 | Verified | Verified ✅ | Verified ✅ |
-| Amazon founded by Bezos in 1994 | 1 | Verified | Verified ✅ | Verified ✅ |
-| ChatGPT 100M weekly users (today) | 1 | Inaccurate | Inaccurate ✅ | Inaccurate ✅ |
-| World population 7 billion | 1 | Inaccurate | Inaccurate ✅ | Inaccurate ✅ |
-| 2024 Harvard study, 92% buy only AI-recommended | 1 | False | False ✅ | False ✅ |
-| Eiffel Tower completed 1925 | 2 | Inaccurate | Inaccurate ✅ | False ⚠️ label mismatch |
-| Nexora Retail +870% revenue | 2 | False | False ✅ | False ✅ |
-| Python first released 1991 | 2 | Verified | Verified ✅ | Not checked ❌ (fixed) |
+| Claim | Page | Expected | Run 1 | Run 2 | Run 3 (after fixes) |
+|---|---|---|---|---|---|
+| Apple founded 1976 | 1 | Verified | Verified ✅ | Verified ✅ | Verified ✅ |
+| Amazon founded by Bezos in 1994 | 1 | Verified | Verified ✅ | Verified ✅ | Verified ✅ |
+| ChatGPT 100M weekly users (today) | 1 | Inaccurate | Inaccurate ✅ | Inaccurate ✅ | Inaccurate ✅ |
+| World population 7 billion | 1 | Inaccurate | Inaccurate ✅ | Inaccurate ✅ | Inaccurate ✅ |
+| 2024 Harvard study, 92% buy only AI-recommended | 1 | False | False ✅ | False ✅ | False ✅ |
+| Eiffel Tower completed 1925 | 2 | Inaccurate | Inaccurate ✅ | False ⚠️ label mismatch | Inaccurate ✅ |
+| Nexora Retail +870% revenue | 2 | False | False ✅ | False ✅ | False ✅ |
+| Python first released 1991 | 2 | Verified | Verified ✅ | Not checked ❌ (fixed) | Verified ✅ |
 
-Both runs also found an extra true claim, "Eiffel Tower is the most visited paid monument", and
+All three runs also found an extra true claim, "Eiffel Tower is the most visited paid monument", and
 Verified it with a Guinness World Records source.

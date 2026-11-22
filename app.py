@@ -51,7 +51,7 @@ def get_secret(name: str) -> str:
 
 with st.sidebar:
     st.header("Settings")
-    max_claims = st.slider("Maximum claims to check", 5, 25, 12,
+    max_claims = st.slider("Maximum claims to check", 5, 25, 15,
                            help="More claims = longer run and more API credits used.")
     with st.expander("Use your own API keys (optional)"):
         st.caption("Only needed if the app's own credits run out. "

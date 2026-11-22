@@ -26,13 +26,21 @@ Design choices that make results trustworthy:
 - **Evidence-only judging.** The model is told to judge only from the search results, not its own memory, and it is given today's date so it can tell when a figure is outdated.
 - **No invented links.** The model cites evidence by number, and the app turns those numbers into the real URLs Tavily returned. A source link can't be made up.
 - **Honest failures.** If a search fails, the claim is shown as *Not checked* rather than guessed.
-- **Credit protection.** At most 25 claims per run (12 by default). The same PDF with the same settings is served from an in-memory cache, and the app automatically retries when it hits rate limits.
+- **Credit protection.** At most 25 claims per run (15 by default). The same PDF with the same settings is served from an in-memory cache, and the app automatically retries when it hits rate limits.
 
 | Verdict | Meaning |
 |---|---|
 | 🟢 Verified | Credible evidence supports the claim (allowing small rounding differences) |
 | 🟠 Inaccurate | The subject is real, but a figure or date is wrong, or an old figure is presented as current |
 | 🔴 False | No credible evidence, a fabricated entity or statistic, or the evidence flatly contradicts the claim |
+
+## Test results
+
+The app was tested live with four PDFs of accurate, outdated, fabricated and mixed "trap" claims
+(`tests/pdfs/`). After the fixes, the trap PDF scored 8 of 8 and the outdated-stats PDF 6 of 6, with
+the expected labels and the correct current facts. The accurate PDF scored 5 of 5 and the fabricated
+PDF 6 of 6 on their single runs. Every run, including the earlier misses and how they were fixed, is
+in [`tests/EXPECTED_RESULTS.md`](tests/EXPECTED_RESULTS.md).
 
 ## Tech stack
 
