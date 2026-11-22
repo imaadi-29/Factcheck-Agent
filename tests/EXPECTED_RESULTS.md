@@ -37,13 +37,15 @@ is flagged and the correct fact is given.
 | Water boils at 150 °C at sea level | Inaccurate/False | 100 °C | |
 
 ## 4_trap_mixed.pdf (mixed, closest to the company's "Trap Document")
-| Claim | Page | Expected |
-|---|---|---|
-| Apple founded 1976 | 1 | Verified |
-| Amazon founded by Bezos in 1994 | 1 | Verified |
-| ChatGPT 100M weekly users (today) | 1 | Inaccurate |
-| World population 7 billion | 1 | Inaccurate |
-| 2024 Harvard study, 92% buy only AI-recommended | 1 | False |
-| Eiffel Tower completed 1925 | 2 | Inaccurate (1889) |
-| Nexora Retail +870% revenue | 2 | False |
-| Python first released 1991 | 2 | Verified |
+| Claim | Page | Expected | Actual (live app, 22 Nov 2026) |
+|---|---|---|---|
+| Apple founded 1976 | 1 | Verified | Verified ✅ |
+| Amazon founded by Bezos in 1994 | 1 | Verified | Verified ✅ |
+| ChatGPT 100M weekly users (today) | 1 | Inaccurate | Inaccurate ✅ (gave 900M, Feb 2026) |
+| World population 7 billion | 1 | Inaccurate | Inaccurate ✅ (gave ~8.3B, 2026) |
+| 2024 Harvard study, 92% buy only AI-recommended | 1 | False | False ✅ |
+| Eiffel Tower completed 1925 | 2 | Inaccurate (1889) | Inaccurate ✅ (gave 31 Mar 1889) |
+| Nexora Retail +870% revenue | 2 | False | False ✅ |
+| Python first released 1991 | 2 | Verified | Verified ✅ |
+
+Extra claim the app also found in 4_trap_mixed.pdf: 'Eiffel Tower is the most visited paid monument' was Verified, with a Guinness World Records source. Result: 8 of 8 planted claims classified correctly.
